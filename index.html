@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleek To-Do Tasks</title>
+    <meta name="description" content="A beautiful, interactive to-do list application.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>My Tasks</h1>
+            <p class="subtitle" id="date-display">Today</p>
+        </header>
+
+        <div class="input-section">
+            <input type="text" id="task-input" placeholder="What needs to be done?" autocomplete="off">
+            <button id="add-btn" aria-label="Add task">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="active">Active</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+
+        <ul id="task-list" class="task-list">
+            <!-- Tasks will be dynamically injected here -->
+        </ul>
+        
+        <div class="stats">
+            <span id="task-count">0 tasks left</span>
+            <button id="clear-completed">Clear Completed</button>
+        </div>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+</html>

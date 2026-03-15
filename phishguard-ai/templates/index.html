@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard AI - Smart Phishing Detection System</title>
+    <!-- Link to our CSS file for custom styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Header section that visually identifies the tool -->
+    <header>
+        <h1>Shield 🛡️ PhishGuard AI</h1>
+        <p>Your Ultimate Smart Phishing Detection System for URLs and Emails</p>
+    </header>
+
+    <div class="container">
+        <div class="scanners-wrapper">
+            <!-- URL Scanner Component Section -->
+            <div class="card">
+                <h2>🌐 Link Identifier</h2>
+                <div class="input-group">
+                    <label for="url-input">Enter URL to run check:</label>
+                    <input type="text" id="url-input" placeholder="e.g. https://example.com/login">
+                </div>
+                <!-- Execute scanUrl() javascript function when the button is clicked -->
+                <button onclick="scanUrl()">Scan Link URL</button>
+                <div id="url-loader" class="loader"></div>
+                
+                <!-- This hidden box will appear after scanning the URL -->
+                <div id="url-result" class="result-box">
+                    <div id="url-risk-banner" class="risk-level"></div>
+                    <p><strong>Threat Score:</strong> <span id="url-score"></span> / 5</p>
+                    <div id="url-reasons"></div>
+                    
+                    <div class="api-result">
+                        <p><strong>URL Reputation Database Check:</strong> <span id="url-api-status"></span></p>
+                        <p id="url-api-details" class="details-text"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Text Analyzer Component Section -->
+            <div class="card">
+                <h2>✉️ Email Body Analyzer</h2>
+                <div class="input-group">
+                    <label for="email-input">Paste the email content below:</label>
+                    <textarea id="email-input" rows="6" placeholder="Dear member, your account access has been suspended. Please click here to verify immediately."></textarea>
+                </div>
+                <!-- Execute scanEmail() javascript function on button click -->
+                <button onclick="scanEmail()">Analyze Text Content</button>
+                <div id="email-loader" class="loader"></div>
+                
+                <!-- This hidden box will appear after completing email scan -->
+                <div id="email-result" class="result-box">
+                    <div id="email-risk-banner" class="risk-level"></div>
+                    <p><strong>Threat Score:</strong> <span id="email-score"></span> / 5</p>
+                    <div id="email-reasons"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phishing Awareness Content / Informative Section -->
+        <div class="card tips-section">
+            <h2>💡 Security Awareness Tips</h2>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <h3>Never Share OTPs</h3>
+                    <p>Bank officials or authentic organizations will never ask you for your verification codes or OTP passwords.</p>
+                </div>
+                <div class="tip-item">
+                    <h3>Inspect Main Domains</h3>
+                    <p>Review the main URL domain carefully. Fraudsters rely on misspellings such as 'q00gle.com' or 'paypaI.com'.</p>
+                </div>
+                <div class="tip-item">
+                    <h3>Don't Open Unknown Links</h3>
+                    <p>Avoid clicking links placed in unsolicited emails. Be extra skeptical if the message tries to create a false sense of urgency.</p>
+                </div>
+                <div class="tip-item">
+                    <h3>Verify True Senders</h3>
+                    <p>Do not simply check the display name. Validate the actual underlying email address of the sender using client details.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive JavaScript Layer controlling the interface and making backend calls -->
+    <script>
+        // Function to make an asynchronous call to the backend for URL scanning
+        async function scanUrl() {
+            // Get the user's string input from input box
+            const urlInput = document.getElementById('url-input').value.trim();
+            if (!urlInput) {
+                alert('Please type or paste a URL before scanning.');
+                return;
+            }
+
+            // Immediately display a loading animation and hide previous results
+            document.getElementById('url-loader').style.display = 'block';
+            document.getElementById('url-result').style.display = 'none';
+
+            try {
+                // Execute standard Fetch POST request over to our python flask `/scan_url` route
+                const response = await fetch('/scan_url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput }) // serialize our data object
+                });
+                
+                const data = await response.json();
+                
+                // Hide the loader as we have our response
+                document.getElementById('url-loader').style.display = 'none';
+                
+                // --- Start building the URL feedback interface output ---
+                const resultBox = document.getElementById('url-result');
+                const banner = document.getElementById('url-risk-banner');
+                
+                banner.textContent = data.analysis.level;
+                
+                // Clean prior UI feedback classes and append specific dynamic level label (risk-SAFE, etc.)
+                banner.className = 'risk-level risk-' + data.analysis.level;
+                
+                document.getElementById('url-score').textContent = data.analysis.score;
+                
+                // Inject the generated list of reasons into HTML dynamically
+                let reasonsHtml = '';
+                if (data.analysis.reasons.length > 0) {
+                    reasonsHtml = '<p><strong>Triggers Detected:</strong></p><ul class="reason-list">';
+                    data.analysis.reasons.forEach(reason => {
+                        reasonsHtml += `<li>⚠️ ${reason}</li>`;
+                    });
+                    reasonsHtml += '</ul>';
+                } else {
+                    reasonsHtml = '<p>✅ No simple phishing patterns discovered in this specific URL structure.</p>';
+                }
+                document.getElementById('url-reasons').innerHTML = reasonsHtml;
+                
+                // Inject our simulated API external data feedback
+                const apiStatusSpan = document.getElementById('url-api-status');
+                apiStatusSpan.textContent = data.api_reputation.api_status;
+                if (data.api_reputation.api_status.includes('Clean')) {
+                    apiStatusSpan.style.color = 'var(--safe-color)';
+                } else {
+                    apiStatusSpan.style.color = 'var(--dangerous-color)';
+                }
+                document.getElementById('url-api-details').textContent = data.api_reputation.api_details;
+                
+                // Enable visibility of result section
+                resultBox.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Network Error Encountered:', error);
+                document.getElementById('url-loader').style.display = 'none';
+                alert('Oops. An error occurred while communicating with the server scanner.');
+            }
+        }
+
+        // Function to handle reading and checking the email body component 
+        async function scanEmail() {
+            // Read content from the main textarea form control
+            const emailInput = document.getElementById('email-input').value.trim();
+            if (!emailInput) {
+                alert('Please provide some email text content before analyzing.');
+                return;
+            }
+
+            // Bring up loading ring visual state
+            document.getElementById('email-loader').style.display = 'block';
+            document.getElementById('email-result').style.display = 'none';
+
+            try {
+                // Post this to the text processing specific endpoint layer
+                const response = await fetch('/scan_email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: emailInput })
+                });
+                
+                const data = await response.json();
+                
+                // Clear wait animation
+                document.getElementById('email-loader').style.display = 'none';
+                
+                // Prepare UI injection points for new data evaluation returns
+                const resultBox = document.getElementById('email-result');
+                const banner = document.getElementById('email-risk-banner');
+                
+                banner.textContent = data.analysis.level;
+                // Add exact class color map corresponding to the Python derived risk enum string outputs
+                banner.className = 'risk-level risk-' + data.analysis.level;
+                
+                document.getElementById('email-score').textContent = data.analysis.score;
+                
+                // Convert array outputs into semantic html lists
+                let reasonsHtml = '';
+                if (data.analysis.reasons.length > 0) {
+                    reasonsHtml = '<p><strong>Triggers Detected:</strong></p><ul class="reason-list">';
+                    data.analysis.reasons.forEach(reason => {
+                        reasonsHtml += `<li>⚠️ ${reason}</li>`;
+                    });
+                    reasonsHtml += '</ul>';
+                } else {
+                    reasonsHtml = '<p>✅ No dangerous phrases or indicators currently found.</p>';
+                }
+                document.getElementById('email-reasons').innerHTML = reasonsHtml;
+                
+                // Enable final result visibility box widget overlay
+                resultBox.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Scan Error:', error);
+                document.getElementById('email-loader').style.display = 'none';
+                alert('Unable to analyze email right now. Server connection error.');
+            }
+        }
+    </script>
+</body>
+</html>
